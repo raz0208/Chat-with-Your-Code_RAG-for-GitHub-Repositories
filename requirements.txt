@@ -1,0 +1,11 @@
+deeplake
+openai
+llama-index
+llama-index-readers-github
+llama-index-vector-stores-deeplake
+langchain
+langchain-community
+langchain-core
+numpy
+pandas
+python-dotenv
