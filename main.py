@@ -1,4 +1,7 @@
-import nest_asyncio
+# Import required libraries
+
+# Apply nest_asyncio to allow nested event loops in Jupyter notebooks or similar environments.
+import nest_asyncio 
 nest_asyncio.apply()
 
 import os
@@ -28,4 +31,13 @@ def validate_owner_repo(owner, repo):
 def initialize_github_client(token):
     github_token = os.getenv(token)
     return GithubClient(github_token)
-    
+
+# Check for OpenAI API key
+OpenAI_API_KEY = os.getenv("OPENAI_API_KEY")
+if not OpenAI_API_KEY:
+    raise ValueError("OpenAI API key not found. Please set the OPENAI_API_KEY environment variable.")
+
+# Check for GitHub Token
+GitHub_token = os.getenv("GITHUB_TOKEN")
+if not GitHub_token:
+    raise ValueError("GitHub token not found. Please set the GITHUB_TOKEN environment variable.")
