@@ -41,3 +41,9 @@ if not OpenAI_API_KEY:
 GitHub_token = os.getenv("GITHUB_TOKEN")
 if not GitHub_token:
     raise ValueError("GitHub token not found. Please set the GITHUB_TOKEN environment variable.")
+
+# Check for Deaplake API Token
+deeplake_token = os.getenv("DEEPLAKE_TOKEN")
+if not deeplake_token:
+    raise ValueError("Deeplake API token not found. Please set the DEEPLAKE_TOKEN environment variable.")
+
