@@ -1,6 +1,6 @@
 # Import required libraries
 
-# Apply nest_asyncio to allow nested event loops in Jupyter notebooks or similar environments.
+# Import required libraries
 import nest_asyncio 
 nest_asyncio.apply()
 
@@ -9,10 +9,13 @@ import re
 import textwrap
 from dotenv import load_dotenv
 from llama_index.readers.github import GithubRepositoryReader, GithubClient
-from llama_index.core import VectorStoreIndex
+from llama_index.core import VectorStoreIndex, Settings  # Added Settings
 from llama_index.vector_stores.deeplake import DeepLakeVectorStore
 from llama_index.core.storage.storage_context import StorageContext
-from openai import OpenAI
+
+# Import Groq and HuggingFace wrappers
+from llama_index.llms.groq import Groq
+from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 
 # Load the environment variables from your .env file
 load_dotenv()
@@ -55,15 +58,15 @@ GitHub_token = os.getenv("GITHUB_TOKEN") # Check for GitHub Token
 if not GitHub_token:
     raise ValueError("GitHub token not found. Please set the GITHUB_TOKEN environment variable.")
 
-deeplake_token = os.getenv("DEEPLAKE_TOKEN") # Check for Deaplake API Token
-if not deeplake_token:
+active_loop_token = os.getenv("ACTIVELOOP_TOKEN") # Check for Deaplake API Token
+if not active_loop_token:
     raise ValueError("Deeplake API token not found. Please set the DEEPLAKE_TOKEN environment variable.")
 
-# Initialize Groq via OpenAI Client
-client = OpenAI( # Note: the correct argument name 'api_key' (lowercase)
-    api_key=GROQ_API_KEY,
-    base_url="https://api.groq.com/openai/v1",
-)
+# # Initialize Groq via OpenAI Client
+# client = OpenAI( # Note: the correct argument name 'api_key' (lowercase)
+#     api_key=GROQ_API_KEY,
+#     base_url="https://api.groq.com/openai/v1",
+# )
 
 # # Corrected syntax for Groq/OpenAI Chat Completion
 # print("Testing Groq API connection...")
@@ -97,6 +100,13 @@ def get_valid_repo_data():
 
 # Call function to get valid GitHub URL as client input
 owner, repo = get_valid_repo_data()
+
+# Configure LlamaIndex to use Groq and HuggingFace
+print("Configuring LLM and Embedding models...")
+Settings.llm = Groq(model="openai/gpt-oss-120b", api_key=GROQ_API_KEY)
+
+# Using a standard local embedding model from HuggingFace
+Settings.embed_model = HuggingFaceEmbedding(model_name="BAAI/bge-small-en-v1.5")
 
 # Initioalize the GitHub repository loader
 loader = GithubRepositoryReader(
@@ -137,3 +147,17 @@ print(f"Test Question: {intro_question}")
 print("=" *50)
 answer = query_engine.query(intro_question)
 print(f"Answer: {textwrap.fill(str(answer), 100)} \n")
+
+
+# Interactive query loop
+while True:
+    user_query = input("Ask a question about the repository (or type 'exit' to exit): ")
+    if user_query.lower() == 'exit':
+        print("Exiting...")
+        break
+    
+    print("=" *50)
+    print(f"Your question: {user_query}")
+    
+    answer = query_engine.query(user_query)
+    print(f"Answer: {textwrap.fill(str(answer), 100)} \n")

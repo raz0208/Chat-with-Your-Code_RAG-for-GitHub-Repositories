@@ -9,3 +9,5 @@ langchain-core
 numpy
 pandas
 python-dotenv
+llama-index-llms-groq
+llama-index-embeddings-huggingface
