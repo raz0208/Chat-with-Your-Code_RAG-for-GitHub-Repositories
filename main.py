@@ -6,7 +6,7 @@ nest_asyncio.apply()
 
 import os
 import re
-# import textwarp
+import textwrap
 from dotenv import load_dotenv
 from llama_index.readers.github import GithubRepositoryReader, GithubClient
 from llama_index.core import VectorStoreIndex
@@ -36,6 +36,11 @@ def initialize_github_client(token_env_name):
     github_token = os.getenv(token_env_name)
     return GithubClient(github_token)
 
+# Fetch DATASET_PATH from environment variables
+DATASET_PATH = os.getenv("DATASET_PATH")
+if not DATASET_PATH:
+    raise ValueError("DATASET_PATH not found. Please set the DATASET_PATH environment variable.")
+
 # # Check for OpenAI API key if you have it
 # OpenAI_API_KEY = os.getenv("OPENAI_API_KEY")
 # if not OpenAI_API_KEY:
@@ -60,17 +65,17 @@ client = OpenAI( # Note: the correct argument name 'api_key' (lowercase)
     base_url="https://api.groq.com/openai/v1",
 )
 
-# Corrected syntax for Groq/OpenAI Chat Completion
-print("Testing Groq API connection...")
-response = client.chat.completions.create(
-    model="openai/gpt-oss-20b", # Note: use a valid Groq model here, e.g., 'llama3-8b-8192' or 'mixtral-8x7b-32768'
-    messages=[
-        {"role": "user", "content": "Explain the importance of fast language models"}
-    ]
-)
-print("Groq Response:")
-print(response.choices[0].message.content)
-print("-" * 40)
+# # Corrected syntax for Groq/OpenAI Chat Completion
+# print("Testing Groq API connection...")
+# response = client.chat.completions.create(
+#     model="openai/gpt-oss-20b", # Note: use a valid Groq model here, e.g., 'llama3-8b-8192' or 'mixtral-8x7b-32768'
+#     messages=[
+#         {"role": "user", "content": "Explain the importance of fast language models"}
+#     ]
+# )
+# print("Groq Response:")
+# print(response.choices[0].message.content)
+# print("-" * 40)
 
 # Initialize Github client
 gitHub_client = initialize_github_client("GITHUB_TOKEN")
@@ -111,3 +116,24 @@ for doc in docs:
     print(doc.metadata)
 
 print("Uploading to vector store ...")
+
+# Create vectore store and upload data
+vectore_store = DeepLakeVectorStore(
+    dataset_path = DATASET_PATH,
+    overwrite = True,
+    runtime = {"tensor_db": True}
+)
+
+# Create storage context and index
+storage_context = StorageContext.from_defaults(vector_store = vectore_store)
+index = VectorStoreIndex.from_documents(docs, storage_context = storage_context)
+query_engine = index.as_query_engine()
+
+print("Data uploaded to vector store successfully!")
+
+# A simple quation to test
+intro_question = "What is the purpose of this repository?"
+print(f"Test Question: {intro_question}")
+print("=" *50)
+answer = query_engine.query(intro_question)
+print(f"Answer: {textwrap.fill(str(answer), 100)} \n")
