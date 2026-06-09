@@ -12,6 +12,10 @@ from llama_index.readers.github import GithubRepositoryReader, GithubClient
 from llama_index.core import VectorStoreIndex
 from llama_index.vector_stores.deeplake import DeepLakeVectorStore
 from llama_index.core.storage.storage_context import StorageContext
+from openai import OpenAI
+
+# Load the environment variables from your .env file
+load_dotenv()
 
 # Extract owner and repo from GitHub URL
 def parse_github_url(url): 
@@ -28,24 +32,45 @@ def validate_owner_repo(owner, repo):
     return bool(owner), bool(repo)
 
 # Initialize GitHub client
-def initialize_github_client(token):
-    github_token = os.getenv(token)
+def initialize_github_client(token_env_name):
+    github_token = os.getenv(token_env_name)
     return GithubClient(github_token)
 
-# Check for OpenAI API key
-OpenAI_API_KEY = os.getenv("OPENAI_API_KEY")
-if not OpenAI_API_KEY:
-    raise ValueError("OpenAI API key not found. Please set the OPENAI_API_KEY environment variable.")
+# # Check for OpenAI API key if you have it
+# OpenAI_API_KEY = os.getenv("OPENAI_API_KEY")
+# if not OpenAI_API_KEY:
+#     raise ValueError("OpenAI API key not found. Please set the OPENAI_API_KEY environment variable.")
 
-# Check for GitHub Token
-GitHub_token = os.getenv("GITHUB_TOKEN")
+# Verify all required API Keys are loaded
+GROQ_API_KEY = os.getenv("GROQ_API_KEY") # Check for Groq API Key
+if not GROQ_API_KEY:
+    raise ValueError("Groq API key not found. Please set the GROQ_API_KEY in your .env file.")
+
+GitHub_token = os.getenv("GITHUB_TOKEN") # Check for GitHub Token
 if not GitHub_token:
     raise ValueError("GitHub token not found. Please set the GITHUB_TOKEN environment variable.")
 
-# Check for Deaplake API Token
-deeplake_token = os.getenv("DEEPLAKE_TOKEN")
+deeplake_token = os.getenv("DEEPLAKE_TOKEN") # Check for Deaplake API Token
 if not deeplake_token:
     raise ValueError("Deeplake API token not found. Please set the DEEPLAKE_TOKEN environment variable.")
+
+# Initialize Groq via OpenAI Client
+client = OpenAI( # Note: the correct argument name 'api_key' (lowercase)
+    api_key=GROQ_API_KEY,
+    base_url="https://api.groq.com/openai/v1",
+)
+
+# Corrected syntax for Groq/OpenAI Chat Completion
+print("Testing Groq API connection...")
+response = client.chat.completions.create(
+    model="openai/gpt-oss-20b", # Note: use a valid Groq model here, e.g., 'llama3-8b-8192' or 'mixtral-8x7b-32768'
+    messages=[
+        {"role": "user", "content": "Explain the importance of fast language models"}
+    ]
+)
+print("Groq Response:")
+print(response.choices[0].message.content)
+print("-" * 40)
 
 # Initialize Github client
 gitHub_client = initialize_github_client("GITHUB_TOKEN")
@@ -70,10 +95,10 @@ owner, repo = get_valid_repo_data()
 
 # Initioalize the GitHub repository loader
 loader = GithubRepositoryReader(
-    gitHub_client = gitHub_client, # Ensure your cilent variable matched this
+    github_client = gitHub_client, # Ensure your cilent variable matched this
     owner = owner,
     repo = repo,
-    filter_file_extensions = [".py", ".js", ".ts", ".md"],
+    filter_file_extensions = ([".py", ".js",".ts", ".md"], GithubRepositoryReader.FilterType.INCLUDE),
     verbose = False,
     concurrent_requests = 5,
 )
